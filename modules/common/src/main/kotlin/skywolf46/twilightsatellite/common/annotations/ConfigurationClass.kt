@@ -1,0 +1,3 @@
+package skywolf46.twilightsatellite.common.annotations
+
+annotation class ConfigurationClass

@@ -1,0 +1,27 @@
+publishing {
+    repositories {
+        maven {
+            name = "Reposilite"
+            allowInsecureProtocol(true)
+            url(rootProject.properties["reposilite.release"])
+            credentials {
+                username(rootProject.properties['reposilite.user'] as String)
+                password(rootProject.properties['reposilite.token'] as String)
+            }
+        }
+    }
+    publications {
+        "$project.name"(MavenPublication) {
+            groupId 'skywolf46'
+            artifactId "twilight-satellite-${project.name}"
+            version rootProject.properties['version'] as String
+            from components.java
+        }
+    }
+}
+
+dependencies {
+    api("org.yaml:snakeyaml:2.2")
+    // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
+    api('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1')
+}

@@ -1,0 +1,31 @@
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+repositories {
+    maven {
+        url rootProject.properties["reposilite.spigot"]
+        allowInsecureProtocol(true)
+    }
+    maven {
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
+    mavenCentral()
+}
+dependencies {
+    implementation(project(":common"))
+    implementation(project(":bukkit"))
+    implementation(project(":velocity"))
+    implementation("skywolf46:atmosphere-reentry-runtime:${rootProject.properties["runtime.version"]}-SNAPSHOT")
+}
+
+build {
+    enabled = false
+}
+
+jar {
+    dependsOn shadowJar
+}
+
+shadowJar {
+    archivesBaseName = "TwilightSatellite-Runtime"
+}

@@ -1,0 +1,107 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
+    id 'org.jetbrains.kotlin.jvm' version '2.1.0' apply false
+    id 'maven-publish'
+}
+
+// =========================================================
+//                Dependency / Repositories
+// =========================================================
+
+repositories {
+    mavenCentral()
+    maven {
+        allowInsecureProtocol(true)
+        url rootProject.properties["reposilite.snapshot"]
+    }
+}
+
+// =========================================================
+//                        Tasks
+// =========================================================
+
+build {
+    enabled = false
+}
+
+
+// =========================================================
+//                Subproject Predefines
+// =========================================================
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+    apply plugin: 'maven-publish'
+
+    // =========================================================
+    //                  Environment Setup
+    // =========================================================
+
+    sourceCompatibility = targetCompatibility = "17"
+
+    kotlin {
+        jvmToolchain(17)
+    }
+
+    java {
+        withSourcesJar()
+    }
+
+
+    // =========================================================
+    //                Dependency / Repositories
+    // =========================================================
+    repositories {
+        mavenCentral()
+        maven {
+            allowInsecureProtocol(true)
+            url rootProject.properties["reposilite.snapshot"]
+        }
+    }
+
+    dependencies {
+        compileOnly("skywolf46:atmosphere-reentry-common-api:${rootProject.properties["core.version"]}-SNAPSHOT") {
+            changing = true
+        }
+        compileOnly("skywolf46:atmosphere-reentry-packetbridge-api:${rootProject.properties["core.version"]}-SNAPSHOT") {
+            changing = true
+        }
+        testImplementation("skywolf46:atmosphere-reentry-common-api:${rootProject.properties["core.version"]}-SNAPSHOT") {
+            changing = true
+        }
+        testImplementation("skywolf46:atmosphere-reentry-packetbridge-api:${rootProject.properties["core.version"]}-SNAPSHOT") {
+            changing = true
+        }
+        testImplementation("skywolf46:atmosphere-reentry-common-impl:${rootProject.properties["core.version"]}-SNAPSHOT") {
+            changing = true
+        }
+        testImplementation("skywolf46:atmosphere-reentry-packetbridge-impl:${rootProject.properties["core.version"]}-SNAPSHOT") {
+            changing = true
+        }
+    }
+
+    // =========================================================
+    //                          Tasks
+    // =========================================================
+
+    jar {
+        archiveBaseName.set("TwilightSatellite-${capitalizeString(project.name)}")
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+private static String capitalizeString(String origin) {
+    StringBuilder sb = new StringBuilder(origin);
+    sb.setCharAt(0, sb.charAt(0).toUpperCase());
+    int current = sb.indexOf('-')
+    while (current != -1) {
+        sb.setCharAt(current + 1, sb.charAt(current + 1).toUpperCase());
+        current = sb.indexOf('-', current + 1)
+    }
+    return sb.toString()
+}

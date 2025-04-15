@@ -1,0 +1,9 @@
+name: TwilightSatellite
+version: 1.0.0
+main: skywolf46.twilightsatellite.bukkit.TwilightSatellite
+api-version: 1.19
+libraries:
+  - 'org.jetbrains.kotlin:kotlin-stdlib:2.0.0'
+  - 'org.jetbrains.kotlin:kotlin-reflect:1.8.10'
+  - 'com.mojang:datafixerupper:6.0.8'
+  - 'io.github.classgraph:classgraph:4.8.160'
