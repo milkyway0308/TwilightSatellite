@@ -8,11 +8,17 @@ TwilightSatellite는 [Velocity](https://papermc.io/software/velocity)와 [Spigot
 어노테이션으로 최소화된 자동화 절차를 다수 포함합니다.
 
 ## 기능 목차
-### - &nbsp;Bukkit API
+### - &nbsp;Common API
 1. [어노테이션 스캔 API]()
-2. [Brigadier 기반 명령어 API]()
-3. [이벤트 호출 API]()
-4. [프록시 연동 API]()
-5. [Yaml 기반 메시지 API]()
-6. [프록시 기반 원격 저장소 API]()
-7. '
+2. [YAML API]()
+3. [비동기 데이터 저장 API]()
+### - &nbsp;Bukkit API
+1. [Brigadier 기반 명령어 API]()
+2. [이벤트 호출 API]()
+3. [프록시 연동 API]()
+4. [Yaml 기반 메시지 API]()
+5. [프록시 기반 원격 저장소 API]()
+6. [기타 유틸리티 API]()
+### - &nbsp;Velocity API
+1. [YAML API]()
+2. [원격 서버 인식 API]()
