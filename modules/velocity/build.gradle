@@ -1,0 +1,37 @@
+repositories {
+    maven {
+        url "https://repo.papermc.io/repository/maven-public"
+    }
+    mavenCentral()
+}
+
+dependencies {
+    api(project(":common"))
+    compileOnly("com.velocitypowered:velocity-api:3.1.1")
+    compileOnly(project(":common"))
+
+    annotationProcessor 'com.velocitypowered:velocity-api:3.1.1'
+}
+
+
+publishing {
+    repositories {
+        maven {
+            name = "Reposilite"
+            allowInsecureProtocol(true)
+            url(rootProject.properties["reposilite.release"])
+            credentials {
+                username(rootProject.properties['reposilite.user'] as String)
+                password(rootProject.properties['reposilite.token'] as String)
+            }
+        }
+    }
+    publications {
+        "$project.name"(MavenPublication) {
+            groupId 'skywolf46'
+            artifactId "twilight-satellite-${project.name}"
+            version rootProject.properties['version'] as String
+            from components.java
+        }
+    }
+}

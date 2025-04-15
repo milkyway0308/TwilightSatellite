@@ -1,0 +1,8 @@
+{
+  "id": "twilight-satellite",
+  "name": "Twilight Satellite",
+  "version": "0.0.1",
+  "author": ["Skywolf46"],
+  "description": "Orbiting over the atmosphere",
+  "main": "skywolf46.twilightsatellite.velocity.TwilightSatellite"
+}
