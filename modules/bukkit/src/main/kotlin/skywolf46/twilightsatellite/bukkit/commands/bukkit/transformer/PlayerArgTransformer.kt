@@ -12,6 +12,15 @@ fun CommandArgs<CommandSender>.transformPlayer(bukkitMessage: BukkitMessage = Bu
 
 class PlayerArgTransformer(val onFailed: BukkitMessage) :
     CommandArgTransformer<CommandSender, Player> {
+    companion object {
+        @JvmStatic
+        @JvmOverloads
+        @JvmName("transformer")
+        fun transformer(bukkitMessage: BukkitMessage = BukkitMessage("<red>Player only command.")) : CommandArgTransformer<CommandSender, Player> {
+            return PlayerArgTransformer(bukkitMessage)
+        }
+    }
+
     override fun convert(from: CommandArgs<CommandSender>): CommandArgs<Player>? {
         return convertSilent(from).ifNull { onFailed.sendTo(from.listener) }
     }

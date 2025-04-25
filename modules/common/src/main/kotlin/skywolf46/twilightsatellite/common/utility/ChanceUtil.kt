@@ -6,6 +6,7 @@ import java.util.*
 
 class ChanceUtil {
     companion object {
+        @JvmStatic
         val SHARED = ChanceUtil()
     }
 

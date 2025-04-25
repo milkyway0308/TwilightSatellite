@@ -12,6 +12,8 @@ import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.plugin.java.JavaPlugin
 import skywolf46.twilightsatellite.bukkit.data.PersistentContainerAccessor
+import skywolf46.twilightsatellite.common.data.collections.SingleConsumer
+import java.util.function.Function
 
 // ========================================
 //           ItemMeta Wrapper
@@ -396,6 +398,223 @@ fun ItemStack.dyeArmour(r: Int, g: Int, b: Int): ItemStack {
  *
  * @return name of item
  */
-fun ItemStack.acquireName() : String {
+fun ItemStack.acquireName(): String {
     return itemMeta?.displayName ?: type.name
+}
+
+// ========================================
+//             Java Wrapper
+// ========================================
+object ItemUtil {
+    @JvmStatic
+    fun meta(item: ItemStack, unit: SingleConsumer<ItemMeta>) {
+        val meta = item.itemMeta ?: return
+        unit.accept(meta)
+        item.itemMeta = meta
+    }
+
+    @JvmStatic
+    fun <T : Any> mapMeta(item: ItemStack, unit: Function<ItemMeta, T?>): T? {
+        val meta = item.itemMeta ?: return null
+        val result = runCatching {
+            unit.apply(meta)
+        }.getOrElse {
+            throw it
+        }
+        item.itemMeta = meta
+        return result
+    }
+
+    @JvmStatic
+    fun setupMeta(item: ItemStack, unit: SingleConsumer<ItemMeta>): ItemStack {
+        val meta = item.itemMeta ?: return item
+        unit.accept(meta)
+        item.itemMeta = meta
+        return item
+    }
+
+    @JvmStatic
+    fun <T : Any> mapObserveMeta(item: ItemStack, unit: Function<ItemMeta, T?>): T? {
+        val meta = item.itemMeta ?: return null
+        return runCatching {
+            unit.apply(meta)
+        }.getOrElse {
+            throw it
+        }
+    }
+
+    @JvmStatic
+    fun observeMeta(item: ItemStack, unit: SingleConsumer<ItemMeta>) {
+        val meta = item.itemMeta ?: return
+        unit.accept(meta)
+    }
+
+    @JvmStatic
+    fun <T : ItemMeta> castMeta(cls: Class<T>, item: ItemStack, unit: SingleConsumer<T>) {
+        meta(item) {
+            if (cls.isInstance(it)) {
+                unit.accept(it as T)
+            }
+        }
+    }
+
+    @JvmStatic
+    fun <T : ItemMeta, X : Any> mapCastMeta(cls: Class<T>, item: ItemStack, unit: Function<T, X?>): X? {
+        return mapMeta(item) {
+            if (cls.isInstance(it)) {
+                unit.apply(it as T)
+            } else {
+                null
+            }
+        }
+    }
+
+    @JvmStatic
+    fun <T : ItemMeta> setupCastMeta(cls: Class<T>, item: ItemStack, unit: SingleConsumer<T>): ItemStack {
+        castMeta(cls, item, unit)
+        return item
+    }
+
+    @JvmStatic
+    fun <T : ItemMeta> observeCastMeta(cls: Class<T>, item: ItemStack, unit: SingleConsumer<T>) {
+        observeMeta(item) {
+            if (cls.isInstance(it)) {
+                unit.accept(it as T)
+            }
+        }
+    }
+
+    @JvmStatic
+    fun <T : ItemMeta, X : Any> mapObserveCastMeta(cls: Class<T>, item: ItemStack, unit: Function<T, X?>): X? {
+        return mapObserveMeta(item) {
+            if (cls.isInstance(it)) {
+                unit.apply(it as T)
+            } else {
+                null
+            }
+        }
+    }
+
+    @JvmStatic
+    fun dyeArmour(item: ItemStack, color: Int): ItemStack {
+        castMeta(LeatherArmorMeta::class.java, item) {
+            it.setColor(Color.fromRGB(color))
+        }
+        return item
+    }
+
+    @JvmStatic
+    fun dyeArmour(item: ItemStack, colorCode: String): ItemStack {
+        castMeta(LeatherArmorMeta::class.java, item) {
+            if (colorCode.startsWith('#')) it.setColor(Color.fromRGB(colorCode.substring(1).toInt(16)))
+            else it.setColor(Color.fromRGB(colorCode.toInt(16)))
+        }
+        return item
+    }
+
+    @JvmStatic
+    fun dyeArmour(item: ItemStack, r: Int, g: Int, b: Int): ItemStack {
+        castMeta(LeatherArmorMeta::class.java, item) {
+            it.setColor(Color.fromRGB(r, g, b))
+        }
+        return item
+    }
+
+    @JvmStatic
+    fun amount(item: ItemStack, amount: Int): ItemStack {
+        item.amount = amount
+        return item
+    }
+
+    @JvmStatic
+    fun damage(item: ItemStack, damage: Int): ItemStack {
+        castMeta(Damageable::class.java, item) {
+            it.damage = damage
+        }
+        return item
+    }
+
+    @JvmStatic
+    fun acquireName(item: ItemStack): String {
+        return item.itemMeta?.displayName ?: item.type.name
+    }
+
+    @JvmStatic
+    fun updateDisplayName(item: ItemStack, name: String): ItemStack {
+        item.itemMeta?.setDisplayName(name)
+        return item
+    }
+
+    @JvmStatic
+    fun updateDisplayName(item: ItemStack, name: Component): ItemStack {
+        item.itemMeta?.displayName(name)
+        return item
+    }
+
+    @JvmStatic
+    fun updateLore(item: ItemStack, lore: List<String>): ItemStack {
+        item.itemMeta?.setLore(lore)
+        return item
+    }
+
+    @JvmStatic
+    fun updateLore(item: ItemStack, vararg lore: Component): ItemStack {
+        item.itemMeta?.lore(lore.toList())
+        return item
+    }
+
+    @JvmStatic
+    fun observePersistent(item: ItemStack, unit: SingleConsumer<PersistentDataContainer>) {
+        item.itemMeta?.persistent {
+            unit.accept(this)
+        }
+    }
+
+    @JvmStatic
+    fun <T : Any> mapObservePersistent(item: ItemStack, unit: Function<PersistentDataContainer, T>): T? {
+        return item.itemMeta?.mapPersistent {
+            unit.apply(this)
+        }
+    }
+
+    @JvmStatic
+    fun observerPersistentAccess(
+        item: ItemStack, plugin: JavaPlugin, unit: SingleConsumer<PersistentContainerAccessor>
+    ) {
+        item.itemMeta?.persistentAccess(plugin) {
+            unit.accept(this)
+        }
+    }
+
+    @JvmStatic
+    fun <T : Any> mapPersistentAccess(
+        item: ItemStack, plugin: JavaPlugin, unit: Function<PersistentContainerAccessor, T>
+    ): T? {
+        return item.itemMeta?.mapPersistentAccess(plugin) {
+            unit.apply(this)
+        }
+    }
+
+    @JvmStatic
+    fun <T : Any> mapPersistent(item: ItemStack, unit: Function<PersistentDataContainer, T>): T? {
+        return item.itemMeta?.mapPersistent {
+            unit.apply(this)
+        }
+    }
+
+    @JvmStatic
+    fun persistent(item: ItemStack, unit: SingleConsumer<PersistentDataContainer>) {
+        item.itemMeta?.persistent {
+            unit.accept(this)
+        }
+    }
+
+    @JvmStatic
+    fun persistentAccess(
+        item: ItemStack, plugin: JavaPlugin, unit: SingleConsumer<PersistentContainerAccessor>
+    ) {
+        item.itemMeta?.persistentAccess(plugin) {
+            unit.accept(this)
+        }
+    }
 }

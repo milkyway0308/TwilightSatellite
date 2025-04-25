@@ -4,7 +4,9 @@ import arrow.core.*
 import skywolf46.twilightsatellite.bukkit.commands.exceptions.ArgumentNotEnoughException
 import skywolf46.twilightsatellite.bukkit.commands.exceptions.ConditionMismatchedException
 import skywolf46.twilightsatellite.bukkit.commands.storages.ArgumentConverterStorage
+import skywolf46.twilightsatellite.common.data.collections.*
 import skywolf46.twilightsatellite.common.utility.ifFalse
+import java.util.function.Consumer
 import kotlin.reflect.KClass
 
 open class CommandArgs<AUDIENCE : Any>(
@@ -14,8 +16,12 @@ open class CommandArgs<AUDIENCE : Any>(
         private val anyAudience = Any()
         val converterStorage = ArgumentConverterStorage()
 
+        @JvmName("create")
+        @JvmStatic
         operator fun invoke(input: Array<String>) = CommandArgs(anyAudience, input)
 
+        @JvmStatic
+        @JvmName("create")
         operator fun invoke(input: String) = CommandArgs(anyAudience, input)
     }
 
@@ -213,6 +219,7 @@ open class CommandArgs<AUDIENCE : Any>(
         }
     }
 
+
     inline fun <reified T : Any> nextArg(unit: CommandArgs<AUDIENCE>.(T) -> Unit): Option<ConvertResult> {
         return nextArg(T::class).onRight {
             unit(it.first, it.second)
@@ -329,7 +336,7 @@ open class CommandArgs<AUDIENCE : Any>(
 
     fun dequoteAll() {
         for (x in preArguments.indices) {
-            if(preArguments[x] is String) {
+            if (preArguments[x] is String) {
                 preArguments[x] = (preArguments[x] as String).dequote()
             }
         }
@@ -352,6 +359,95 @@ open class CommandArgs<AUDIENCE : Any>(
             this@apply.preArguments = this@CommandArgs.preArguments.toMutableList()
             this@apply.preArgumentIndex = this@CommandArgs.preArgumentIndex
         }
+    }
+
+    // Java-Compatible Methods
+    @JvmName("nextArg")
+    fun <T : Any> nextArg(cls: Class<T>, unit: DuoConsumer<CommandArgs<in AUDIENCE>, T>): Option<ConvertResult> {
+        val sharedArg = this.clone()
+        val t1 = sharedArg.consumeNextArg(cls.kotlin).getOrElse { return it.toOption() }
+        unit.accept(sharedArg, t1)
+        return None
+    }
+
+    @JvmName("nextArg")
+    fun <T1 : Any, T2 : Any> nextArg(
+        tc1: Class<T1>,
+        tc2: Class<T2>,
+        unit: TrioConsumer<CommandArgs<in AUDIENCE>, T1, T2>
+    ): Option<ConvertResult> {
+        val sharedArg = this.clone()
+        val t1 = sharedArg.consumeNextArg(tc1.kotlin).getOrElse { return it.toOption() }
+        val t2 = sharedArg.consumeNextArg(tc2.kotlin).getOrElse { return it.toOption() }
+        unit.accept(sharedArg, t1, t2)
+        return None
+    }
+
+    @JvmName("nextArg")
+    fun <T1 : Any, T2 : Any, T3 : Any> nextArg(
+        tc1: Class<T1>,
+        tc2: Class<T2>,
+        tc3: Class<T3>,
+        unit: QuartetConsumer<CommandArgs<in AUDIENCE>, T1, T2, T3>
+    ): Option<ConvertResult> {
+        val sharedArg = this.clone()
+        val t1 = sharedArg.consumeNextArg(tc1.kotlin).getOrElse { return it.toOption() }
+        val t2 = sharedArg.consumeNextArg(tc2.kotlin).getOrElse { return it.toOption() }
+        val t3 = sharedArg.consumeNextArg(tc3.kotlin).getOrElse { return it.toOption() }
+        unit.accept(sharedArg, t1, t2, t3)
+        return None
+    }
+
+    @JvmName("nextArg")
+    fun <T1 : Any, T2 : Any, T3 : Any, T4 : Any> nextArg(
+        tc1: Class<T1>,
+        tc2: Class<T2>,
+        tc3: Class<T3>,
+        tc4: Class<T4>,
+        unit: QuintetConsumer<CommandArgs<in AUDIENCE>, T1, T2, T3, T4>
+    ): Option<ConvertResult> {
+        val sharedArg = this.clone()
+        val t1 = sharedArg.consumeNextArg(tc1.kotlin).getOrElse { return it.toOption() }
+        val t2 = sharedArg.consumeNextArg(tc2.kotlin).getOrElse { return it.toOption() }
+        val t3 = sharedArg.consumeNextArg(tc3.kotlin).getOrElse { return it.toOption() }
+        val t4 = sharedArg.consumeNextArg(tc4.kotlin).getOrElse { return it.toOption() }
+        unit.accept(sharedArg, t1, t2, t3, t4)
+        return None
+    }
+
+    @JvmName("nextArg")
+    fun <T1 : Any, T2 : Any, T3 : Any, T4 : Any, T5 : Any> nextArg(
+        tc1: Class<T1>,
+        tc2: Class<T2>,
+        tc3: Class<T3>,
+        tc4: Class<T4>,
+        tc5: Class<T5>,
+        unit: SextetConsumer<CommandArgs<in AUDIENCE>, T1, T2, T3, T4, T5>
+    ): Option<ConvertResult> {
+        val sharedArg = this.clone()
+        val t1 = sharedArg.consumeNextArg(tc1.kotlin).getOrElse { return it.toOption() }
+        val t2 = sharedArg.consumeNextArg(tc2.kotlin).getOrElse { return it.toOption() }
+        val t3 = sharedArg.consumeNextArg(tc3.kotlin).getOrElse { return it.toOption() }
+        val t4 = sharedArg.consumeNextArg(tc4.kotlin).getOrElse { return it.toOption() }
+        val t5 = sharedArg.consumeNextArg(tc5.kotlin).getOrElse { return it.toOption() }
+        unit.accept(sharedArg, t1, t2, t3, t4, t5)
+        return None
+    }
+
+    @JvmName("transformArgs")
+    fun <T : Any> transformArgs(
+        transformer: CommandArgTransformer<AUDIENCE, T>, consumer: Consumer<CommandArgs<T>>
+    ) {
+        val result = transformer.convert(this) ?: return
+        consumer.accept(result)
+    }
+
+    @JvmName("transformArgsSilent")
+    fun <T : Any> transformArgsSilent(
+        transformer: CommandArgTransformer<AUDIENCE, T>, consumer: Consumer<CommandArgs<T>>
+    ) {
+        val result = transformer.convertSilent(this) ?: return
+        consumer.accept(result)
     }
 
     data class ConvertResult(val success: Boolean, val exception: Throwable?) {
