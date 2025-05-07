@@ -4,6 +4,7 @@ import arrow.core.*
 import skywolf46.twilightsatellite.bukkit.commands.exceptions.ArgumentNotEnoughException
 import skywolf46.twilightsatellite.bukkit.commands.exceptions.ConditionMismatchedException
 import skywolf46.twilightsatellite.bukkit.commands.storages.ArgumentConverterStorage
+import skywolf46.twilightsatellite.common.data.RunIfConditionContainer
 import skywolf46.twilightsatellite.common.data.collections.*
 import skywolf46.twilightsatellite.common.utility.ifFalse
 import java.util.function.Consumer
@@ -186,6 +187,14 @@ open class CommandArgs<AUDIENCE : Any>(
         consumer(result)
     }
 
+    fun transformCheck(
+        transformer: CommandArgTransformer<AUDIENCE, *>,
+        consumer: CommandArgs<*>.() -> Unit
+    ) : RunIfConditionContainer {
+        val result = transformer.convert(this) ?: return RunIfConditionContainer(false)
+        consumer(result)
+        return RunIfConditionContainer(true)
+    }
     /**
      * Argument processing function sector
      */
