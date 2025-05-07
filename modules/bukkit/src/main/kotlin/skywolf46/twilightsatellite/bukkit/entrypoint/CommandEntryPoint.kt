@@ -12,6 +12,7 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import io.github.classgraph.ClassInfo
 import io.github.classgraph.ClassInfoList
 import org.bukkit.Bukkit
+import org.bukkit.command.CommandMap
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.context.loadKoinModules
@@ -165,12 +166,48 @@ class CommandEntryPoint : KoinComponent {
         }
         Bukkit.getScheduler().scheduleSyncDelayedTask(TwilightSatellite.instance) {
             Bukkit.getConsoleSender().sendMessage("§eTwilightSatellite §7| §7Finalizing command registration...")
+            val map = extractCommandMap() ?: return@scheduleSyncDelayedTask
             for (literal in literals) {
-                Bukkit.getCommandMap().getCommand(literal)?.apply {
+                map.getCommand(literal)?.apply {
                     permission = null
                 }
             }
         }
+    }
+
+    private fun extractCommandMap(): CommandMap? {
+        var map: CommandMap? = null
+        try {
+            map = Bukkit.getCommandMap()
+        } catch (t: Throwable) {
+            val instance = Bukkit.getServer()
+            val clazz = instance.javaClass
+            Bukkit.getConsoleSender()
+                .sendMessage("§eTwilightSatellite §7| §cCommandMap getter not found! Using reflection instead. (Class ${clazz.name})")
+
+            for (method in clazz.methods) {
+                if (CommandMap::class.java.isAssignableFrom(method.returnType)) {
+                    map = method.invoke(Bukkit.getServer()) as CommandMap
+                    return map
+                }
+            }
+            Bukkit.getConsoleSender()
+                .sendMessage("§eTwilightSatellite §7| §cCommandMap extraction failed. Using field instead.")
+            for (field in clazz.declaredFields) {
+                if (CommandMap::class.java.isAssignableFrom(field.type)) {
+                    field.isAccessible = true
+                    map = field.get(Bukkit.getServer()) as CommandMap
+                    return map
+                }
+            }
+            for (field in clazz.declaredFields) {
+                println("Field ${field.name} : ${field.type.name}")
+            }
+
+        }
+        Bukkit.getConsoleSender()
+            .sendMessage("§eTwilightSatellite §7| §4Failed to extract CommandMap. Command feature will be disabled.")
+        return map
     }
 
     fun registerDefaultAutoCompleteProvider() {
@@ -190,30 +227,38 @@ class CommandEntryPoint : KoinComponent {
 
         bukkitStorage.addBukkitAutoCompleteProvider(RequiredPlaceHolderTypeMatcher::class.java) { matcher, storage ->
             val strings = matcher.parameter
-            val current = WrappedBukkitCommand(RequiredArgumentBuilder.argument<Any, Any?>(
-                matcher.getCommandName() ?: "parameter", when (matcher.type) {
-                    "string" -> StringArgumentType.string()
-                    "string.." -> StringArgumentType.greedyString()
-                    "int" -> {
-                        val param = parseRangedParameter(strings)
-                        if (param == null) {
-                            IntegerArgumentType.integer()
-                        } else {
-                            IntegerArgumentType.integer(param.first, param.last)
+            val current = WrappedBukkitCommand(
+                RequiredArgumentBuilder.argument<Any, Any?>(
+                    matcher.getCommandName() ?: "parameter", when (matcher.type) {
+                        "string" -> StringArgumentType.string()
+                        "string.." -> StringArgumentType.greedyString()
+                        "int" -> {
+                            val param = parseRangedParameter(strings)
+                            if (param == null) {
+                                IntegerArgumentType.integer()
+                            } else {
+                                IntegerArgumentType.integer(param.first, param.last)
+                            }
+                        }
+
+                        else -> StringArgumentType.word()
+                    } as ArgumentType<Any?>
+                ).apply {
+                    if (matcher.requireCompleteEvent()) {
+                        suggests { context, builder ->
+                            CommandSuggestionEvent(
+                                context,
+                                matcher,
+                                storage.owner,
+                                builder,
+                                !Bukkit.isPrimaryThread()
+                            ).apply {
+                                Bukkit.getPluginManager().callEvent(this)
+                            }
+                            builder.buildFuture()
                         }
                     }
-                    else -> StringArgumentType.word()
-                } as ArgumentType<Any?>
-            ).apply {
-                if (matcher.requireCompleteEvent()) {
-                    suggests { context, builder ->
-                        CommandSuggestionEvent(context, matcher, storage.owner, builder, !Bukkit.isPrimaryThread()).apply {
-                            Bukkit.getPluginManager().callEvent(this)
-                        }
-                        builder.buildFuture()
-                    }
-                }
-            })
+                })
 //            if (storage.hasCommandRunner()) {
 //                current.executes {
 //                    storage.execute(it)
